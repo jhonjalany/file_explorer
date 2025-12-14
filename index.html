@@ -75,8 +75,12 @@
       border-radius: 4px;
       cursor: pointer;
     }
-    #upload-btn:hover {
+    #upload-btn:hover:not(:disabled) {
       background: #0069d9;
+    }
+    #upload-btn:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
     }
 
     #search-bar {
@@ -137,6 +141,17 @@
       border-bottom: none;
     }
 
+    /* Copyable filenames */
+    .copyable {
+      cursor: pointer;
+      user-select: none;
+      transition: opacity 0.2s;
+    }
+    .copyable:hover {
+      opacity: 0.85;
+      text-decoration: underline;
+    }
+
     .search-results {
       margin-top: 24px;
     }
@@ -160,7 +175,7 @@
       font-size: 0.95em;
     }
 
-    /* Pagination Styles */
+    /* Pagination */
     .pagination {
       display: flex;
       justify-content: center;
@@ -195,13 +210,19 @@
       color: #666;
       min-height: 1.5em;
     }
+
+    .hint {
+      font-size: 0.85em;
+      color: #666;
+      margin-top: 6px;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
       <h1>📁 Folder Explorer</h1>
-      <p>Drag & drop folders (multiple times), or use the button. Search across all files.</p>
+      <p>Drag & drop folders (multiple allowed), or use the button. Search & copy filenames.</p>
     </header>
 
     <div id="filter-badge" style="display: none;">
@@ -214,7 +235,8 @@
     <div id="upload-area" class="upload-area">
       <p>📁 Drag & drop folders here (multiple allowed)</p>
       <p>or</p>
-      <button id="upload-btn">➕ Select Folders</button>
+      <button id="upload-btn">➕ Select Folder</button>
+      <p class="hint">💡 Click the button multiple times to add more folders.</p>
       <div class="status" id="status"></div>
     </div>
 
@@ -256,13 +278,69 @@
         });
     }
 
-    // --- Modern API: showDirectoryPicker ---
-    async function handleDirectoryHandles(dirHandles) {
-      for (const dirHandle of dirHandles) {
-        await traverseDirectoryModern(dirHandle, '');
+    // --- Clipboard Utility ---
+    async function copyToClipboard(text, element = null) {
+      try {
+        await navigator.clipboard.writeText(text);
+        if (element) {
+          const original = element.textContent;
+          element.textContent = '✓ Copied!';
+          element.style.color = '#28a745';
+          element.style.fontWeight = 'bold';
+          setTimeout(() => {
+            element.textContent = original;
+            element.style.color = '';
+            element.style.fontWeight = '';
+          }, 1200);
+        }
+      } catch (err) {
+        console.warn('Modern copy failed, using fallback:', err);
+        // Fallback for older browsers
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+          document.execCommand('copy');
+        } catch (ex) {
+          alert('❌ Copy failed. Please copy manually:\n\n' + text);
+        }
+        document.body.removeChild(textarea);
+        if (element) {
+          const original = element.textContent;
+          element.textContent = text.length > 30 ? text.substring(0, 27) + '...' : text;
+          element.style.color = '#dc3545';
+          setTimeout(() => {
+            element.textContent = original;
+            element.style.color = '';
+          }, 1500);
+        }
       }
-      updateStatus(`✅ Added ${dirHandles.length} folder(s)`);
-      renderResults();
+    }
+
+    // --- Modern API: showDirectoryPicker (single folder at a time) ---
+    async function addFolderViaPicker() {
+      if (!('showDirectoryPicker' in window)) {
+        alert('⚠️ Folder selection via button is not supported in your browser.\n' +
+              '👉 Please drag & drop folders directly into the upload area instead.');
+        return;
+      }
+
+      try {
+        const dirHandle = await window.showDirectoryPicker({
+          mode: 'read'
+        });
+        await traverseDirectoryModern(dirHandle, '');
+        updateStatus(`✅ Folder "${dirHandle.name}" added`);
+        renderResults();
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error('Folder picker error:', err);
+          alert('❌ Failed to read folder:\n' + (err.message || 'Unknown error'));
+        }
+      }
     }
 
     async function traverseDirectoryModern(dirHandle, currentPath) {
@@ -276,7 +354,7 @@
       }
     }
 
-    // --- Legacy/Fallback: webkitGetAsEntry ---
+    // --- Legacy/Fallback: webkitGetAsEntry (drag & drop only) ---
     async function handleEntry(entry, currentPath = '') {
       return new Promise((resolve) => {
         const path = currentPath ? `${currentPath}/${entry.name}` : entry.name;
@@ -295,7 +373,10 @@
                 );
                 readEntries();
               }
-            }, () => resolve());
+            }, (error) => {
+              console.error('Directory read error:', error);
+              resolve();
+            });
           };
           readEntries();
         } else {
@@ -339,6 +420,7 @@
         return;
       }
 
+      // Render root files
       if (rootFiles.length > 0) {
         const rootCard = document.createElement('div');
         rootCard.className = 'folder-card';
@@ -348,12 +430,17 @@
             <span class="file-count">${rootFiles.length} file${rootFiles.length !== 1 ? 's' : ''}</span>
           </div>
           <ul class="file-list">
-            ${rootFiles.map(f => `<li class="file-item">${f}</li>`).join('')}
+            ${rootFiles.map(f => 
+              `<li class="file-item">
+                <span class="copyable" title="Click to copy full path">${f}</span>
+              </li>`
+            ).join('')}
           </ul>
         `;
         resultsDiv.appendChild(rootCard);
       }
 
+      // Render subfolders
       folders.forEach(folderPath => {
         const files = getFilesInFolder(folderPath);
         const card = document.createElement('div');
@@ -365,7 +452,12 @@
           </div>
           <ul class="file-list">
             ${files.length > 0 
-              ? files.map(f => `<li class="file-item">${f.split('/').pop()}</li>`).join('')
+              ? files.map(f => {
+                  const fileName = f.split('/').pop();
+                  return `<li class="file-item">
+                    <span class="copyable" title="Click to copy: ${fileName}">${fileName}</span>
+                  </li>`;
+                }).join('')
               : '<li class="file-item" style="color:#999">No files</li>'
             }
           </ul>
@@ -377,7 +469,6 @@
       searchResultsDiv.style.display = 'none';
     }
 
-    // Render only current page of matches
     function renderMatchesPage() {
       const start = (currentPage - 1) * matchesPerPage;
       const end = start + matchesPerPage;
@@ -388,7 +479,7 @@
             const folder = fp.substring(0, fp.lastIndexOf('/') || 0) || '(root)';
             return `
               <div class="match-item">
-                <span>${fp}</span>
+                <span class="copyable" title="Click to copy full path">${fp}</span>
                 <span class="match-folder">📁 ${folder}</span>
               </div>`;
           }).join('')
@@ -429,7 +520,6 @@
 
       paginationDiv.appendChild(prevButton);
 
-      // Show up to 5 page numbers around current
       const startPage = Math.max(1, currentPage - 2);
       const endPage = Math.min(totalPages, startPage + 4);
       for (let i = startPage; i <= endPage; i++) {
@@ -453,11 +543,8 @@
       currentPage = 1;
 
       searchResultsDiv.style.display = 'block';
-
-      // Render matches list (paginated)
       renderMatchesPage();
 
-      // Render folder cards (only folders with direct matches)
       resultsDiv.innerHTML = '';
       const rootMatches = allMatchingFiles.filter(fp => !fp.includes('/'));
       if (rootMatches.length > 0) {
@@ -469,7 +556,11 @@
             <span class="file-count">${rootMatches.length} match${rootMatches.length !== 1 ? 'es' : ''}</span>
           </div>
           <ul class="file-list">
-            ${rootMatches.map(f => `<li class="file-item">${f}</li>`).join('')}
+            ${rootMatches.map(f => 
+              `<li class="file-item">
+                <span class="copyable" title="Click to copy full path">${f}</span>
+              </li>`
+            ).join('')}
           </ul>`;
         resultsDiv.appendChild(card);
       }
@@ -490,7 +581,12 @@
             <span class="file-count">${directMatches.length} match${directMatches.length !== 1 ? 'es' : ''}</span>
           </div>
           <ul class="file-list">
-            ${directMatches.map(f => `<li class="file-item">${f.split('/').pop()}</li>`).join('')}
+            ${directMatches.map(f => {
+                const fileName = f.split('/').pop();
+                return `<li class="file-item">
+                  <span class="copyable" title="Click to copy: ${fileName}">${fileName}</span>
+                </li>`;
+              }).join('')}
           </ul>`;
         resultsDiv.appendChild(card);
       });
@@ -514,19 +610,12 @@
 
     // --- Event Handlers ---
     uploadBtn.addEventListener('click', async () => {
-      if ('showDirectoryPicker' in window) {
-        try {
-          const dirHandles = await window.showDirectoryPicker({ multiple: true });
-          await handleDirectoryHandles(dirHandles);
-        } catch (err) {
-          if (err.name !== 'AbortError') {
-            alert('📁 Folder selection failed: ' + err.message);
-          }
-        }
-      } else {
-        alert('⚠️ Your browser doesn’t support folder selection via button.\n' +
-              '👉 Try dragging folders directly into the upload area instead.');
-      }
+      const originalText = uploadBtn.textContent;
+      uploadBtn.disabled = true;
+      uploadBtn.textContent = '📁 Selecting...';
+      await addFolderViaPicker();
+      uploadBtn.disabled = false;
+      uploadBtn.textContent = originalText;
     });
 
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -554,21 +643,33 @@
       }
 
       if (entries.length === 0) {
-        updateStatus('⚠️ No folders detected. Drag folders, not files.');
+        updateStatus('⚠️ No folders detected. Drag folders (not files).');
         return;
       }
 
-      for (const entry of entries) {
-        await handleEntry(entry);
-      }
+      uploadArea.classList.add('dragover');
+      uploadBtn.disabled = true;
+      uploadBtn.textContent = '📁 Processing...';
 
-      updateStatus(`✅ Added ${entries.length} folder(s) via drag`);
-      renderResults();
+      try {
+        for (const entry of entries) {
+          await handleEntry(entry);
+        }
+        updateStatus(`✅ Added ${entries.length} folder(s) via drag`);
+      } catch (err) {
+        console.error('Drag processing error:', err);
+        updateStatus('❌ Error reading folders. See console for details.');
+      } finally {
+        uploadArea.classList.remove('dragover');
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = '➕ Select Folder';
+        renderResults();
+      }
     });
 
     searchBar.addEventListener('input', (e) => {
       clearTimeout(searchTimeout);
-      searchTimeout = setTimeout(() => performSearch(e.target.value), 100);
+      searchTimeout = setTimeout(() => performSearch(e.target.value), 150);
     });
 
     searchBar.addEventListener('keydown', (e) => {
@@ -585,7 +686,20 @@
       searchBar.focus();
     });
 
+    // --- Global delegated copy handler ---
+    document.addEventListener('click', async (e) => {
+      const copyable = e.target.closest('.copyable');
+      if (copyable) {
+        const text = copyable.textContent.trim();
+        if (text && !text.startsWith('✓') && !text.startsWith('❌')) {
+          await copyToClipboard(text, copyable);
+        }
+      }
+    });
+
+    // Initial render
     renderResults();
   </script>
 </body>
 </html>
+
