@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>📁 Folder Explorer — Multi-Upload & Smart Search</title>
+  <title>📁 Folder Explorer — Multi-Upload, Smart Search & Achievement Builder</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -141,7 +141,6 @@
       border-bottom: none;
     }
 
-    /* Copyable filenames */
     .copyable {
       cursor: pointer;
       user-select: none;
@@ -175,7 +174,6 @@
       font-size: 0.95em;
     }
 
-    /* Pagination */
     .pagination {
       display: flex;
       justify-content: center;
@@ -216,14 +214,204 @@
       color: #666;
       margin-top: 6px;
     }
+
+    /* Builder Mode */
+    #builder-output {
+      margin-top: 24px;
+      padding: 16px;
+      background: #fff;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+    #builder-output pre {
+      background: #2d2d2d;
+      color: #f8f8f2;
+      padding: 12px;
+      border-radius: 6px;
+      overflow: auto;
+      white-space: pre-wrap;
+      font-family: monospace;
+      max-height: 300px;
+      margin-top: 8px;
+      font-size: 0.95em;
+    }
+    #builder-controls {
+      margin-bottom: 8px;
+    }
+    #builder-controls button {
+      margin-right: 8px;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #builder-controls button#generate-const,
+    #builder-controls button#generate-other {
+      background: #6c757d;
+      color: white;
+    }
+    #builder-controls button#copy-const,
+    #builder-controls button#copy-other {
+      background: #28a745;
+      color: white;
+    }
+    #builder-controls button#clear-const,
+    #builder-controls button#clear-other {
+      background: #dc3545;
+      color: white;
+    }
+    #builder-controls button:hover:not(:disabled) {
+      opacity: 0.85;
+    }
+
+    /* Tab styling */
+    .builder-tab {
+      background: #6c757d;
+      color: white;
+      border: none;
+      padding: 6px 16px;
+      border-radius: 4px 4px 0 0;
+      cursor: pointer;
+      font-weight: normal;
+    }
+    .builder-tab.active {
+      background: #0069d9 !important;
+      font-weight: bold;
+    }
+
+    /* Award Modal */
+    #award-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background: white;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 500px;
+      max-height: 80vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .modal-header {
+      padding: 16px;
+      background: #007bff;
+      color: white;
+      font-weight: bold;
+    }
+    .modal-body {
+      padding: 16px;
+      overflow-y: auto;
+    }
+    .award-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 480px) {
+      .award-list {
+        grid-template-columns: 1fr;
+      }
+    }
+    .award-item {
+      display: flex;
+      align-items: center;
+    }
+    .award-item input[type="checkbox"] {
+      margin-right: 8px;
+    }
+    .custom-input {
+      display: flex;
+      gap: 6px;
+      margin-top: 12px;
+    }
+    .custom-input input {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .custom-input button {
+      padding: 8px 12px;
+      background: #28a745;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .custom-input button:hover {
+      background: #218838;
+    }
+    .modal-footer {
+      padding: 12px 16px;
+      background: #f8f9fa;
+      text-align: right;
+      border-top: 1px solid #eee;
+    }
+    .modal-footer button {
+      margin-left: 8px;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: #007bff;
+      color: white;
+    }
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+    }
+    .btn-primary:hover { background: #0069d9; }
+    .btn-secondary:hover { background: #5a6268; }
+
+    .suggestion-hint {
+      font-size: 0.85em;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    /* Delete button */
+    .delete-award {
+      margin-left: 8px;
+      background: #dc3545;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 0.8em;
+      cursor: pointer;
+    }
+    .delete-award:hover {
+      background: #c82333;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
       <h1>📁 Folder Explorer</h1>
-      <p>Drag & drop folders (multiple allowed), or use the button. Search & copy filenames.</p>
+      <p>Upload folders, search files, and build achievement mappings effortlessly.</p>
     </header>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <div></div>
+      <label style="display: flex; align-items: center; gap: 6px;">
+        <input type="checkbox" id="builder-mode">
+        <span>🏗️ Achievement Builder</span>
+      </label>
+    </div>
 
     <div id="filter-badge" style="display: none;">
       <span>
@@ -240,7 +428,7 @@
       <div class="status" id="status"></div>
     </div>
 
-    <input type="text" id="search-bar" placeholder="🔍 Search filenames or paths (e.g., 'name/age/config.json')" />
+    <input type="text" id="search-bar" placeholder="🔍 Search filenames or paths (e.g., 'award/name.pdf')" />
 
     <div id="results"></div>
 
@@ -249,11 +437,210 @@
       <div id="matches"></div>
       <div id="pagination" class="pagination"></div>
     </div>
+
+    <!-- Builder Output (Two Tabs) -->
+    <div id="builder-output" style="display: none;">
+      <h3>📝 Achievement Builder</h3>
+
+      <!-- Tab Navigation -->
+      <div style="display: flex; gap: 12px; margin-bottom: 12px; border-bottom: 2px solid #e9ecef; padding-bottom: 8px;">
+        <button id="tab-file" class="builder-tab active">
+          📝 File → Awards
+        </button>
+        <button id="tab-award" class="builder-tab">
+          🏅 Award → Files
+        </button>
+      </div>
+
+      <!-- File → Awards Pane (default) -->
+      <div id="const-pane">
+        <div id="builder-controls">
+          <button id="generate-const">🔧 Generate const</button>
+          <button id="copy-const">📋 Copy const</button>
+          <button id="clear-const">🗑️ Clear all</button>
+          <span class="hint">Click filenames to assign awards. Suggestions auto-save!</span>
+        </div>
+        <pre id="const-output">// No awards assigned yet. Click filenames to begin.</pre>
+      </div>
+
+      <!-- Award → Files Pane -->
+      <div id="otherawards-pane" style="display: none;">
+        <div id="builder-controls">
+          <button id="generate-other">🔧 Generate const</button>
+          <button id="copy-other">📋 Copy const</button>
+          <button id="clear-other">🗑️ Clear all</button>
+          <span class="hint"><strong>Inverted format!</strong> Awards appear in assignment order.</span>
+        </div>
+        <pre id="otherawards-output">// No awards assigned yet. Click filenames to begin.</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Award Selection Modal -->
+  <div id="award-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        Select Awards for: <span id="modal-filename">file.jpg</span>
+      </div>
+      <div class="modal-body">
+        <div class="award-list" id="award-checklist">
+          <!-- populated dynamically -->
+        </div>
+        <div class="custom-input">
+          <input type="text" id="new-award-input" placeholder="Add new award (e.g., BEST IN SCIENCE)">
+          <button id="add-award-btn">➕ Add</button>
+        </div>
+        <div class="suggestion-hint">
+          ✅ Checked awards will be added. New awards are saved for future use.
+          <a href="#" id="reset-suggestions" style="margin-left: 8px; color: #dc3545; font-size: 0.8em;">Reset suggestions</a>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="cancel-modal">Cancel</button>
+        <button class="btn-primary" id="confirm-modal">✔️ Add Selected</button>
+      </div>
+    </div>
   </div>
 
   <script>
     let fileMap = {};
 
+    // ===== Builder Mode State =====
+    let builderMode = false;
+    let builderData = {};   // { "full/path.jpg": ["AWARD"] }
+    let fileOrder = [];     // insertion order of full paths
+    let awardOrder = [];    // ✅ INSERTION ORDER of awards (first appearance)
+    let otherAwardsMode = false;
+
+    // --- Load Awards & Builder Data ---
+    function loadAwards() {
+      const saved = localStorage.getItem('builder_achievements');
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.warn('Failed to parse saved awards, using defaults');
+        }
+      }
+      return [
+        "WITH HIGHEST HONORS",
+        "WITH HIGH HONORS",
+        "WITH HONORS",
+        "BEST IN MATH",
+        "BEST IN SCIENCE",
+        "BEST IN ENGLISH",
+        "BEST IN FILIPINO",
+        "BEST IN SOCIAL STUDIES",
+        "BEST IN MAPEH",
+        "BEST IN TLE",
+        "MOST OUTSTANDING STUDENT",
+        "OUTSTANDING IN RESEARCH",
+        "LEADERSHIP AWARD",
+        "SPORTS AWARD",
+        "ARTS AWARD",
+        "GOOD CONDUCT AWARD"
+      ];
+    }
+
+    function saveAwards(awards) {
+      localStorage.setItem('builder_achievements', JSON.stringify(awards));
+    }
+
+    // ✅ Enhanced loader: now includes awardOrder
+    function loadBuilderData() {
+      const saved = localStorage.getItem('builder_data');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed !== null && typeof parsed === 'object' && parsed.constructor === Object) {
+            // Modern format: { builderData, fileOrder, awardOrder }
+            if (
+              parsed.builderData !== undefined &&
+              Array.isArray(parsed.fileOrder) &&
+              Array.isArray(parsed.awardOrder) &&
+              typeof parsed.builderData === 'object' &&
+              parsed.builderData.constructor === Object
+            ) {
+              return {
+                builderData: parsed.builderData,
+                fileOrder: parsed.fileOrder,
+                awardOrder: parsed.awardOrder
+              };
+            }
+
+            // Legacy: no awardOrder → use alphabetical or infer from data
+            if (parsed.builderData !== undefined && Array.isArray(parsed.fileOrder)) {
+              return {
+                builderData: parsed.builderData,
+                fileOrder: parsed.fileOrder,
+                awardOrder: []
+              };
+            }
+
+            // Very old flat format
+            const metaKeys = new Set(['builderData', 'fileOrder', 'awardOrder']);
+            const keys = Object.keys(parsed);
+            const suspicious = keys.some(k => metaKeys.has(k) && keys.length <= 4);
+            if (suspicious) {
+              console.warn('⚠️ Recovering corrupted builder_data (legacy)');
+              const realFiles = keys.filter(k => !metaKeys.has(k) && Array.isArray(parsed[k]));
+              const recoveredData = {};
+              realFiles.forEach(k => recoveredData[k] = parsed[k]);
+              return {
+                builderData: recoveredData,
+                fileOrder: realFiles,
+                awardOrder: []
+              };
+            }
+
+            // Safe legacy flat
+            return {
+              builderData: parsed,
+              fileOrder: keys,
+              awardOrder: []
+            };
+          }
+        } catch (e) {
+          console.error('Failed to parse builder_data', e);
+        }
+      }
+      return { builderData: {}, fileOrder: [], awardOrder: [] };
+    }
+
+    // ✅ Save awardOrder now
+    function saveBuilderData() {
+      const payload = {
+        _version: 3, // bumped for awardOrder support
+        builderData: builderData,
+        fileOrder: fileOrder,
+        awardOrder: awardOrder
+      };
+      localStorage.setItem('builder_data', JSON.stringify(payload));
+    }
+
+    // ✅ Normalize: only replace "_" with space
+    function normalizeName(filePath) {
+      let name = filePath;
+      const lastSlash = name.lastIndexOf('/');
+      if (lastSlash !== -1) name = name.substring(lastSlash + 1);
+      const lastDot = name.lastIndexOf('.');
+      if (lastDot > 0 && lastDot < name.length - 1) {
+        const ext = name.slice(lastDot + 1).toLowerCase();
+        if (/^[a-z0-9]{2,5}$/.test(ext)) {
+          name = name.slice(0, lastDot);
+        }
+      }
+      name = name.replace(/_/g, ' ');
+      return name;
+    }
+
+    let awardSuggestions = loadAwards();
+    const loaded = loadBuilderData();
+    builderData = loaded.builderData;
+    fileOrder = loaded.fileOrder;
+    awardOrder = loaded.awardOrder || [];
+
+    // --- Core Functions ---
     function getAllFoldersFromFiles() {
       const folders = new Set();
       for (const filePath of Object.keys(fileMap)) {
@@ -270,15 +657,12 @@
     function getFilesInFolder(folderPath) {
       return Object.keys(fileMap)
         .filter(filePath => {
-          if (folderPath === '') {
-            return !filePath.includes('/');
-          }
+          if (folderPath === '') return !filePath.includes('/');
           return filePath.startsWith(folderPath + '/') &&
                  filePath.slice(folderPath.length + 1).indexOf('/') === -1;
         });
     }
 
-    // --- Clipboard Utility ---
     async function copyToClipboard(text, element = null) {
       try {
         await navigator.clipboard.writeText(text);
@@ -294,44 +678,29 @@
           }, 1200);
         }
       } catch (err) {
-        console.warn('Modern copy failed, using fallback:', err);
-        // Fallback for older browsers
         const textarea = document.createElement('textarea');
         textarea.value = text;
-        textarea.style.position = 'fixed';
-        textarea.style.opacity = '0';
+        textarea.style.position = 'fixed'; textarea.style.opacity = '0';
         document.body.appendChild(textarea);
         textarea.select();
-        try {
-          document.execCommand('copy');
-        } catch (ex) {
-          alert('❌ Copy failed. Please copy manually:\n\n' + text);
-        }
+        try { document.execCommand('copy'); } catch (ex) { alert('❌ Copy failed. Please copy manually:\n\n' + text); }
         document.body.removeChild(textarea);
         if (element) {
           const original = element.textContent;
           element.textContent = text.length > 30 ? text.substring(0, 27) + '...' : text;
           element.style.color = '#dc3545';
-          setTimeout(() => {
-            element.textContent = original;
-            element.style.color = '';
-          }, 1500);
+          setTimeout(() => { element.textContent = original; element.style.color = ''; }, 1500);
         }
       }
     }
 
-    // --- Modern API: showDirectoryPicker (single folder at a time) ---
     async function addFolderViaPicker() {
       if (!('showDirectoryPicker' in window)) {
-        alert('⚠️ Folder selection via button is not supported in your browser.\n' +
-              '👉 Please drag & drop folders directly into the upload area instead.');
+        alert('⚠️ Folder selection via button is not supported. Use drag & drop instead.');
         return;
       }
-
       try {
-        const dirHandle = await window.showDirectoryPicker({
-          mode: 'read'
-        });
+        const dirHandle = await window.showDirectoryPicker({ mode: 'read' });
         await traverseDirectoryModern(dirHandle, '');
         updateStatus(`✅ Folder "${dirHandle.name}" added`);
         renderResults();
@@ -346,43 +715,190 @@
     async function traverseDirectoryModern(dirHandle, currentPath) {
       for await (const entry of dirHandle.values()) {
         const path = currentPath ? `${currentPath}/${entry.name}` : entry.name;
-        if (entry.kind === 'file') {
-          fileMap[path] = true;
-        } else if (entry.kind === 'directory') {
-          await traverseDirectoryModern(entry, path);
-        }
+        if (entry.kind === 'file') fileMap[path] = true;
+        else if (entry.kind === 'directory') await traverseDirectoryModern(entry, path);
       }
     }
 
-    // --- Legacy/Fallback: webkitGetAsEntry (drag & drop only) ---
     async function handleEntry(entry, currentPath = '') {
       return new Promise((resolve) => {
         const path = currentPath ? `${currentPath}/${entry.name}` : entry.name;
-        if (entry.isFile) {
-          fileMap[path] = true;
-          resolve();
-        } else if (entry.isDirectory) {
+        if (entry.isFile) { fileMap[path] = true; resolve(); }
+        else if (entry.isDirectory) {
           const dirReader = entry.createReader();
           const readEntries = () => {
             dirReader.readEntries(async (entries) => {
-              if (entries.length === 0) {
-                resolve();
-              } else {
-                await Promise.all(
-                  entries.map(e => handleEntry(e, path))
-                );
+              if (entries.length === 0) resolve();
+              else {
+                await Promise.all(entries.map(e => handleEntry(e, path)));
                 readEntries();
               }
-            }, (error) => {
-              console.error('Directory read error:', error);
-              resolve();
-            });
+            }, () => resolve());
           };
           readEntries();
-        } else {
-          resolve();
+        } else resolve();
+      });
+    }
+
+    // ===== Builder Functions =====
+    // ✅ Track award order on first assignment
+    function updateBuilderData(fullPath, entries) {
+      if (!fileOrder.includes(fullPath)) {
+        fileOrder.push(fullPath);
+      }
+      if (!builderData[fullPath]) {
+        builderData[fullPath] = [];
+      }
+
+      // Add new awards to awardOrder on first appearance
+      entries.forEach(award => {
+        if (!awardOrder.includes(award)) {
+          awardOrder.push(award);
         }
       });
+
+      builderData[fullPath].push(...entries);
+
+      // Dedupe *per file*
+      const seen = new Set();
+      builderData[fullPath] = builderData[fullPath].filter(item => {
+        if (seen.has(item)) return false;
+        seen.add(item);
+        return true;
+      });
+
+      saveBuilderData();
+      renderConstOutput();
+      renderOtherAwardsOutput();
+    }
+
+    // ✅ File → Awards (unchanged)
+    function renderConstOutput() {
+      const output = document.getElementById('const-output');
+      if (!output) return;
+      const validFiles = fileOrder.filter(file => builderData[file] && builderData[file].length > 0);
+      if (validFiles.length === 0) {
+        output.textContent = '// No awards assigned yet. Click filenames to begin.';
+        return;
+      }
+      const lines = ['const achievement = {'];
+      validFiles.forEach((fullPath, i) => {
+        const normalized = normalizeName(fullPath);
+        const entries = builderData[fullPath];
+        const entriesStr = entries.map(e => JSON.stringify(e)).join(', ');
+        const comma = i < validFiles.length - 1 ? ',' : '';
+        lines.push(`  ${JSON.stringify(normalized)}: [${entriesStr}]${comma}`);
+      });
+      lines.push('};');
+      output.textContent = lines.join('\n');
+    }
+
+    // ✅ Award → Files — preserves awardOrder (NOT alphabetical)
+    function renderOtherAwardsOutput() {
+      const output = document.getElementById('otherawards-output');
+      if (!output) return;
+
+      // Build map: award → unique cleaned filenames (preserve order per award too)
+      const awardToFiles = {};
+      for (const [fullPath, awards] of Object.entries(builderData)) {
+        const cleanName = normalizeName(fullPath);
+        for (const award of awards) {
+          if (!awardToFiles[award]) awardToFiles[award] = [];
+          if (!awardToFiles[award].includes(cleanName)) {
+            awardToFiles[award].push(cleanName);
+          }
+        }
+      }
+
+      // ✅ Use awardOrder, but filter out awards with no files (defensive)
+      const orderedAwards = awardOrder.filter(award => awardToFiles[award] && awardToFiles[award].length > 0);
+
+      if (orderedAwards.length === 0) {
+        output.textContent = '// No awards assigned yet. Click filenames to begin.';
+        return;
+      }
+
+      const lines = ['const otherAwards = {'];
+      orderedAwards.forEach((award, i) => {
+        const files = awardToFiles[award];
+        const filesStr = files.map(f => JSON.stringify(f)).join(',\n    ');
+        const comma = i < orderedAwards.length - 1 ? ',' : '';
+        lines.push(`  ${JSON.stringify(award)}: [\n    ${filesStr}\n  ]${comma}`);
+      });
+      lines.push('};');
+      output.textContent = lines.join('\n');
+    }
+
+    function copyConstToClipboard(mode = 'achievement') {
+      const elemId = mode === 'achievement' ? 'const-output' : 'otherawards-output';
+      const text = document.getElementById(elemId).textContent;
+      if (text.includes('// No awards')) {
+        alert(`⚠️ Nothing to copy. Assign some awards first.`);
+        return;
+      }
+      copyToClipboard(text);
+    }
+
+    function clearBuilderData() {
+      if (Object.keys(builderData).length === 0) {
+        updateStatus('ℹ️ No awards to clear.');
+        return;
+      }
+      if (!confirm('🗑️ Clear all assigned awards?\n(Award suggestions and uploaded files will be kept.)')) {
+        return;
+      }
+      builderData = {};
+      fileOrder = [];
+      awardOrder = []; // ✅ also reset
+      saveBuilderData();
+      renderConstOutput();
+      renderOtherAwardsOutput();
+      document.querySelectorAll('.copyable').forEach(el => {
+        if (el.textContent.startsWith('✓')) {
+          const fullPath = el.dataset.fullpath;
+          const fileName = fullPath.split('/').pop();
+          el.textContent = fileName;
+          el.style.color = '';
+        }
+      });
+      updateStatus('🧹 Builder data cleared.');
+    }
+
+    // ===== Award Modal =====
+    let currentFileForModal = '';
+    function openAwardModal(filename) {
+      currentFileForModal = filename;
+      document.getElementById('modal-filename').textContent = filename;
+      const checklist = document.getElementById('award-checklist');
+      checklist.innerHTML = '';
+      awardSuggestions.forEach(award => {
+        const div = document.createElement('div');
+        div.className = 'award-item';
+        const encodedId = encodeURIComponent(award);
+        div.innerHTML = `
+          <input type="checkbox" id="award-${encodedId}" value="${award}">
+          <label for="award-${encodedId}">${award}</label>
+          <button class="delete-award" data-award="${award}" title="Remove this suggestion">🗑️</button>
+        `;
+        checklist.appendChild(div);
+      });
+      checklist.querySelectorAll('.delete-award').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const awardToRemove = btn.dataset.award;
+          if (confirm(`🗑️ Remove "${awardToRemove}" from your suggestions?\n(This won’t remove it from already assigned files.)`)) {
+            awardSuggestions = awardSuggestions.filter(a => a !== awardToRemove);
+            saveAwards(awardSuggestions);
+            openAwardModal(currentFileForModal);
+          }
+        });
+      });
+      document.getElementById('award-modal').style.display = 'flex';
+    }
+
+    function closeAwardModal() {
+      document.getElementById('award-modal').style.display = 'none';
+      document.getElementById('new-award-input').value = '';
     }
 
     // --- UI & Utils ---
@@ -400,27 +916,23 @@
     let currentPage = 1;
     const matchesPerPage = 10;
     let allMatchingFiles = [];
+    let searchAbortController = null;
 
     function updateStatus(msg) {
       statusDiv.textContent = msg;
-      setTimeout(() => {
-        if (statusDiv.textContent === msg) statusDiv.textContent = '';
-      }, 3000);
+      setTimeout(() => { if (statusDiv.textContent === msg) statusDiv.textContent = ''; }, 3000);
     }
 
     function renderResults() {
       resultsDiv.innerHTML = '';
       const folders = getAllFoldersFromFiles();
       const rootFiles = getFilesInFolder('');
-
       if (folders.length === 0 && rootFiles.length === 0) {
         resultsDiv.innerHTML = '<p style="text-align:center;color:#888">No folders or files uploaded yet.</p>';
         filterBadge.style.display = 'none';
         searchResultsDiv.style.display = 'none';
         return;
       }
-
-      // Render root files
       if (rootFiles.length > 0) {
         const rootCard = document.createElement('div');
         rootCard.className = 'folder-card';
@@ -432,15 +944,13 @@
           <ul class="file-list">
             ${rootFiles.map(f => 
               `<li class="file-item">
-                <span class="copyable" title="Click to copy full path">${f}</span>
+                <span class="copyable" data-fullpath="${f}" title="Click to ${builderMode ? 'assign awards' : 'copy full path'}">${f}</span>
               </li>`
             ).join('')}
           </ul>
         `;
         resultsDiv.appendChild(rootCard);
       }
-
-      // Render subfolders
       folders.forEach(folderPath => {
         const files = getFilesInFolder(folderPath);
         const card = document.createElement('div');
@@ -455,7 +965,7 @@
               ? files.map(f => {
                   const fileName = f.split('/').pop();
                   return `<li class="file-item">
-                    <span class="copyable" title="Click to copy: ${fileName}">${fileName}</span>
+                    <span class="copyable" data-fullpath="${f}" title="Click to ${builderMode ? 'assign awards' : 'copy full path'}">${fileName}</span>
                   </li>`;
                 }).join('')
               : '<li class="file-item" style="color:#999">No files</li>'
@@ -464,87 +974,16 @@
         `;
         resultsDiv.appendChild(card);
       });
-
       filterBadge.style.display = 'none';
       searchResultsDiv.style.display = 'none';
-    }
-
-    function renderMatchesPage() {
-      const start = (currentPage - 1) * matchesPerPage;
-      const end = start + matchesPerPage;
-      const paginatedMatches = allMatchingFiles.slice(start, end);
-
-      matchesDiv.innerHTML = paginatedMatches.length
-        ? paginatedMatches.map(fp => {
-            const folder = fp.substring(0, fp.lastIndexOf('/') || 0) || '(root)';
-            return `
-              <div class="match-item">
-                <span class="copyable" title="Click to copy full path">${fp}</span>
-                <span class="match-folder">📁 ${folder}</span>
-              </div>`;
-          }).join('')
-        : '<p style="color:#666">No matching files found.</p>';
-
-      renderPagination();
-    }
-
-    function renderPagination() {
-      const totalPages = Math.ceil(allMatchingFiles.length / matchesPerPage);
-      paginationDiv.innerHTML = '';
-
-      if (totalPages <= 1) {
-        paginationDiv.style.display = 'none';
-        return;
-      }
-      paginationDiv.style.display = 'flex';
-
-      const prevButton = document.createElement('button');
-      prevButton.textContent = '◀ Prev';
-      prevButton.disabled = currentPage === 1;
-      prevButton.onclick = () => {
-        if (currentPage > 1) {
-          currentPage--;
-          renderMatchesPage();
-        }
-      };
-
-      const nextButton = document.createElement('button');
-      nextButton.textContent = 'Next ▶';
-      nextButton.disabled = currentPage === totalPages;
-      nextButton.onclick = () => {
-        if (currentPage < totalPages) {
-          currentPage++;
-          renderMatchesPage();
-        }
-      };
-
-      paginationDiv.appendChild(prevButton);
-
-      const startPage = Math.max(1, currentPage - 2);
-      const endPage = Math.min(totalPages, startPage + 4);
-      for (let i = startPage; i <= endPage; i++) {
-        const pageButton = document.createElement('button');
-        pageButton.className = 'page-number';
-        pageButton.textContent = i;
-        pageButton.style.fontWeight = i === currentPage ? 'bold' : 'normal';
-        pageButton.onclick = () => {
-          currentPage = i;
-          renderMatchesPage();
-        };
-        paginationDiv.appendChild(pageButton);
-      }
-
-      paginationDiv.appendChild(nextButton);
     }
 
     function renderFilteredResults(query) {
       const lowerQuery = query.toLowerCase();
       allMatchingFiles = Object.keys(fileMap).filter(fp => fp.toLowerCase().includes(lowerQuery));
       currentPage = 1;
-
       searchResultsDiv.style.display = 'block';
       renderMatchesPage();
-
       resultsDiv.innerHTML = '';
       const rootMatches = allMatchingFiles.filter(fp => !fp.includes('/'));
       if (rootMatches.length > 0) {
@@ -558,21 +997,21 @@
           <ul class="file-list">
             ${rootMatches.map(f => 
               `<li class="file-item">
-                <span class="copyable" title="Click to copy full path">${f}</span>
+                <span class="copyable" data-fullpath="${f}" title="Click to ${builderMode ? 'assign awards' : 'copy full path'}">${f}</span>
               </li>`
             ).join('')}
           </ul>`;
         resultsDiv.appendChild(card);
       }
-
       const folders = getAllFoldersFromFiles();
       folders.forEach(folderPath => {
-        const directMatches = allMatchingFiles.filter(fp =>
-          fp.startsWith(folderPath + '/') && 
-          fp.slice(folderPath.length + 1).indexOf('/') === -1
-        );
+        const directMatches = allMatchingFiles.filter(fp => {
+          const prefix = folderPath + '/';
+          if (!fp.startsWith(prefix)) return false;
+          const rel = fp.slice(prefix.length);
+          return rel.indexOf('/') === -1;
+        });
         if (directMatches.length === 0) return;
-
         const card = document.createElement('div');
         card.className = 'folder-card';
         card.innerHTML = `
@@ -584,31 +1023,112 @@
             ${directMatches.map(f => {
                 const fileName = f.split('/').pop();
                 return `<li class="file-item">
-                  <span class="copyable" title="Click to copy: ${fileName}">${fileName}</span>
+                  <span class="copyable" data-fullpath="${f}" title="Click to ${builderMode ? 'assign awards' : 'copy full path'}">${fileName}</span>
                 </li>`;
               }).join('')}
           </ul>`;
         resultsDiv.appendChild(card);
       });
-
       if (resultsDiv.children.length === 0) {
         resultsDiv.innerHTML = '<p style="text-align:center;color:#888">No folders contain matching files.</p>';
       }
-
       filterBadge.style.display = 'block';
     }
 
-    let searchTimeout;
-    function performSearch(query) {
-      const clean = query.trim();
-      if (!clean) {
-        renderResults();
-      } else {
-        renderFilteredResults(clean);
+    function renderMatchesPage() {
+      matchesDiv.innerHTML = '';
+      const start = (currentPage - 1) * matchesPerPage;
+      const end = start + matchesPerPage;
+      const pageMatches = allMatchingFiles.slice(start, end);
+      if (pageMatches.length === 0) {
+        matchesDiv.innerHTML = '<p>No matches found.</p>';
+        paginationDiv.style.display = 'none';
+        return;
       }
+      pageMatches.forEach(fp => {
+        const parts = fp.split('/');
+        const folder = parts.length > 1 ? parts.slice(0, -1).join('/') : '(root)';
+        const file = parts[parts.length - 1];
+        const div = document.createElement('div');
+        div.className = 'match-item';
+        div.innerHTML = `
+          <span>${file}</span>
+          <span class="match-folder">${folder}</span>
+        `;
+        matchesDiv.appendChild(div);
+      });
+      const totalPages = Math.ceil(allMatchingFiles.length / matchesPerPage);
+      paginationDiv.style.display = totalPages > 1 ? 'flex' : 'none';
+      if (totalPages <= 1) return;
+      paginationDiv.innerHTML = '';
+      const maxVisible = 5;
+      let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+      let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+      if (endPage - startPage + 1 < maxVisible) {
+        startPage = Math.max(1, endPage - maxVisible + 1);
+      }
+      if (startPage > 1) {
+        const firstBtn = document.createElement('button');
+        firstBtn.textContent = '1';
+        firstBtn.onclick = () => { currentPage = 1; renderMatchesPage(); renderFilteredResults(searchBar.value); };
+        paginationDiv.appendChild(firstBtn);
+        if (startPage > 2) {
+          const ellipsis = document.createElement('span');
+          ellipsis.textContent = '…';
+          ellipsis.style.padding = '0 4px';
+          paginationDiv.appendChild(ellipsis);
+        }
+      }
+      for (let i = startPage; i <= endPage; i++) {
+        const btn = document.createElement('button');
+        btn.textContent = i;
+        btn.className = 'page-number';
+        if (i === currentPage) btn.disabled = true;
+        btn.onclick = () => { currentPage = i; renderMatchesPage(); renderFilteredResults(searchBar.value); };
+        paginationDiv.appendChild(btn);
+      }
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+          const ellipsis = document.createElement('span');
+          ellipsis.textContent = '…';
+          ellipsis.style.padding = '0 4px';
+          paginationDiv.appendChild(ellipsis);
+        }
+        const lastBtn = document.createElement('button');
+        lastBtn.textContent = totalPages;
+        lastBtn.onclick = () => { currentPage = totalPages; renderMatchesPage(); renderFilteredResults(searchBar.value); };
+        paginationDiv.appendChild(lastBtn);
+      }
+      const prevBtn = document.createElement('button');
+      prevBtn.textContent = '←';
+      prevBtn.disabled = currentPage === 1;
+      prevBtn.onclick = () => { if (currentPage > 1) { currentPage--; renderMatchesPage(); renderFilteredResults(searchBar.value); } };
+      const nextBtn = document.createElement('button');
+      nextBtn.textContent = '→';
+      nextBtn.disabled = currentPage === totalPages;
+      nextBtn.onclick = () => { if (currentPage < totalPages) { currentPage++; renderMatchesPage(); renderFilteredResults(searchBar.value); } };
+      paginationDiv.insertBefore(prevBtn, paginationDiv.firstChild);
+      paginationDiv.appendChild(nextBtn);
     }
 
-    // --- Event Handlers ---
+    function performSearch(query) {
+      if (searchAbortController) {
+        searchAbortController.abort();
+      }
+      searchAbortController = new AbortController();
+      const signal = searchAbortController.signal;
+      const clean = query.trim();
+      setTimeout(() => {
+        if (signal.aborted) return;
+        if (!clean) {
+          renderResults();
+        } else {
+          renderFilteredResults(clean);
+        }
+      }, 150);
+    }
+
+    // --- Event Setup ---
     uploadBtn.addEventListener('click', async () => {
       const originalText = uploadBtn.textContent;
       uploadBtn.disabled = true;
@@ -619,13 +1139,8 @@
     });
 
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-      uploadArea.addEventListener(eventName, preventDefaults, false);
+      uploadArea.addEventListener(eventName, e => { e.preventDefault(); e.stopPropagation(); }, false);
     });
-
-    function preventDefaults(e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
 
     uploadArea.addEventListener('dragenter', () => uploadArea.classList.add('dragover'));
     uploadArea.addEventListener('dragover', () => uploadArea.classList.add('dragover'));
@@ -637,28 +1152,21 @@
       const entries = [];
       for (let i = 0; i < items.length; i++) {
         const item = items[i].webkitGetAsEntry?.();
-        if (item && item.isDirectory) {
-          entries.push(item);
-        }
+        if (item && item.isDirectory) entries.push(item);
       }
-
       if (entries.length === 0) {
         updateStatus('⚠️ No folders detected. Drag folders (not files).');
         return;
       }
-
       uploadArea.classList.add('dragover');
       uploadBtn.disabled = true;
       uploadBtn.textContent = '📁 Processing...';
-
       try {
-        for (const entry of entries) {
-          await handleEntry(entry);
-        }
+        for (const entry of entries) await handleEntry(entry);
         updateStatus(`✅ Added ${entries.length} folder(s) via drag`);
       } catch (err) {
-        console.error('Drag processing error:', err);
-        updateStatus('❌ Error reading folders. See console for details.');
+        console.error('Drag error:', err);
+        updateStatus('❌ Error reading folders.');
       } finally {
         uploadArea.classList.remove('dragover');
         uploadBtn.disabled = false;
@@ -668,8 +1176,7 @@
     });
 
     searchBar.addEventListener('input', (e) => {
-      clearTimeout(searchTimeout);
-      searchTimeout = setTimeout(() => performSearch(e.target.value), 150);
+      performSearch(e.target.value);
     });
 
     searchBar.addEventListener('keydown', (e) => {
@@ -686,19 +1193,128 @@
       searchBar.focus();
     });
 
-    // --- Global delegated copy handler ---
-    document.addEventListener('click', async (e) => {
-      const copyable = e.target.closest('.copyable');
-      if (copyable) {
-        const text = copyable.textContent.trim();
-        if (text && !text.startsWith('✓') && !text.startsWith('❌')) {
-          await copyToClipboard(text, copyable);
-        }
+    // ===== Builder Toggle & Tabs =====
+    document.getElementById('builder-mode').addEventListener('change', (e) => {
+      builderMode = e.target.checked;
+      const builderDiv = document.getElementById('builder-output');
+      builderDiv.style.display = builderMode ? 'block' : 'none';
+      if (builderMode) {
+        document.getElementById('tab-file').click();
+      }
+      renderResults();
+    });
+
+    // Tab switching
+    document.getElementById('tab-file').addEventListener('click', () => {
+      otherAwardsMode = false;
+      document.querySelectorAll('.builder-tab').forEach(el => el.classList.remove('active'));
+      document.getElementById('tab-file').classList.add('active');
+      document.getElementById('const-pane').style.display = 'block';
+      document.getElementById('otherawards-pane').style.display = 'none';
+    });
+
+    document.getElementById('tab-award').addEventListener('click', () => {
+      otherAwardsMode = true;
+      document.querySelectorAll('.builder-tab').forEach(el => el.classList.remove('active'));
+      document.getElementById('tab-award').classList.add('active');
+      document.getElementById('const-pane').style.display = 'none';
+      document.getElementById('otherawards-pane').style.display = 'block';
+    });
+
+    document.getElementById('generate-const').addEventListener('click', () => renderConstOutput());
+    document.getElementById('copy-const').addEventListener('click', () => copyConstToClipboard('achievement'));
+    document.getElementById('clear-const').addEventListener('click', clearBuilderData);
+
+    document.getElementById('generate-other').addEventListener('click', () => renderOtherAwardsOutput());
+    document.getElementById('copy-other').addEventListener('click', () => copyConstToClipboard('otherAwards'));
+    document.getElementById('clear-other').addEventListener('click', clearBuilderData);
+
+    document.getElementById('add-award-btn').addEventListener('click', () => {
+      const input = document.getElementById('new-award-input');
+      const value = input.value.trim().toUpperCase();
+      if (value && !awardSuggestions.includes(value)) {
+        awardSuggestions.push(value);
+        saveAwards(awardSuggestions);
+        input.value = '';
+        openAwardModal(currentFileForModal);
+      } else if (value) {
+        input.style.borderColor = '#dc3545';
+        setTimeout(() => input.style.borderColor = '', 1000);
       }
     });
 
-    // Initial render
+    document.getElementById('new-award-input').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        document.getElementById('add-award-btn').click();
+      }
+    });
+
+    document.getElementById('confirm-modal').addEventListener('click', () => {
+      const checkboxes = document.querySelectorAll('#award-checklist input[type="checkbox"]:checked');
+      const selected = Array.from(checkboxes).map(cb => cb.value);
+      if (selected.length > 0) {
+        updateBuilderData(currentFileForModal, selected);
+        const originalEl = document.querySelector(`.copyable[data-fullpath="${currentFileForModal}"]`);
+        if (originalEl) {
+          const originalText = originalEl.textContent;
+          originalEl.textContent = `✓ +${selected.length} award${selected.length !== 1 ? 's' : ''}`;
+          originalEl.style.color = '#198754';
+          setTimeout(() => {
+            originalEl.textContent = originalEl.dataset.fullpath.split('/').pop();
+            originalEl.style.color = '';
+          }, 1200);
+        }
+      }
+      closeAwardModal();
+    });
+
+    document.getElementById('cancel-modal').addEventListener('click', closeAwardModal);
+    document.getElementById('award-modal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('award-modal')) closeAwardModal();
+    });
+
+    document.getElementById('reset-suggestions').addEventListener('click', (e) => {
+      e.preventDefault();
+      if (confirm('⚠️ Reset all saved award suggestions to defaults?\n(Your assigned awards in files will NOT be lost.)')) {
+        awardSuggestions = [
+          "WITH HIGHEST HONORS",
+          "WITH HIGH HONORS",
+          "WITH HONORS",
+          "BEST IN MATH",
+          "BEST IN SCIENCE",
+          "BEST IN ENGLISH",
+          "BEST IN FILIPINO",
+          "BEST IN SOCIAL STUDIES",
+          "BEST IN MAPEH",
+          "BEST IN TLE",
+          "MOST OUTSTANDING STUDENT",
+          "OUTSTANDING IN RESEARCH",
+          "LEADERSHIP AWARD",
+          "SPORTS AWARD",
+          "ARTS AWARD",
+          "GOOD CONDUCT AWARD"
+        ];
+        saveAwards(awardSuggestions);
+        openAwardModal(currentFileForModal);
+      }
+    });
+
+    document.addEventListener('click', async (e) => {
+      const copyable = e.target.closest('.copyable');
+      if (!copyable) return;
+      const text = copyable.textContent.trim();
+      if (!text || text.startsWith('✓')) return;
+      const fullpath = copyable.dataset.fullpath || text;
+      if (builderMode) {
+        openAwardModal(fullpath);
+      } else {
+        await copyToClipboard(fullpath, copyable);
+      }
+    });
+
     renderResults();
+    renderConstOutput();
+    renderOtherAwardsOutput();
   </script>
 </body>
 </html>
